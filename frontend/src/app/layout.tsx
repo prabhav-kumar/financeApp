@@ -3,16 +3,11 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "FinanceIQ — AI-Powered Personal Finance Intelligence",
-  description:
-    "Track portfolios, analyse financial health, run simulations, and get AI-powered financial advice.",
+  title: "DhanSathi — AI-Powered Personal Finance",
+  description: "Track portfolios, analyse financial health, run simulations, and get AI-powered financial advice.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>

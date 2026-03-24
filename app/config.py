@@ -11,7 +11,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # ── App ──────────────────────────────────────────────
-    APP_NAME: str = "FinanceIQ"
+    APP_NAME: str = "DhanSathi"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 

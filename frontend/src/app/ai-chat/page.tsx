@@ -1,13 +1,4 @@
 "use client";
-/**
- * AI Chat Page — Virtual CFO Interface
- *
- * Full conversational AI financial advisor that:
- *  - Sends user messages + history to /ai/chat
- *  - Displays LLM responses with rich markdown rendering
- *  - Maintains multi-turn conversation context
- *  - Shows provider/model info for transparency
- */
 
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Sparkles, Loader2, RefreshCw, Zap, Info } from "lucide-react";
@@ -23,225 +14,164 @@ interface Message {
   model?: string | null;
 }
 
+const QUICK_PROMPTS = [
+  "Am I saving enough?",
+  "Where should I invest next?",
+  "How to reduce my debt?",
+  "Can I retire by 45?",
+  "Analyse my financial health",
+  "How to improve my savings rate?",
+];
+
+function renderContent(content: string) {
+  return content.split("\n").map((line, i) => {
+    const parts = line.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+      if (part.startsWith("**") && part.endsWith("**"))
+        return <strong key={j} style={{ color: "var(--text-primary)", fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+      return <span key={j}>{part}</span>;
+    });
+
+    if (line.trim().startsWith("• ") || line.trim().startsWith("- ") || line.trim().startsWith("* "))
+      return <div key={i} style={{ display: "flex", gap: 8, paddingLeft: 8, margin: "2px 0" }}>
+        <span style={{ color: "var(--indigo)" }}>•</span><span>{parts}</span>
+      </div>;
+
+    if (/^\d+\.\s/.test(line.trim()))
+      return <div key={i} style={{ display: "flex", gap: 8, paddingLeft: 8, margin: "2px 0" }}>
+        <span style={{ color: "var(--indigo)" }}>{line.trim().match(/^\d+/)?.[0]}.</span>
+        <span>{parts.slice(1)}</span>
+      </div>;
+
+    if (line.trim().startsWith("## "))
+      return <p key={i} style={{ fontWeight: 700, fontSize: 14, marginTop: 12, marginBottom: 4, color: "var(--text-primary)" }}>
+        {line.replace(/^#+\s*/, "")}
+      </p>;
+
+    if (line.trim().startsWith("# "))
+      return <p key={i} className="gradient-text" style={{ fontWeight: 700, fontSize: 16, marginTop: 12, marginBottom: 4 }}>
+        {line.replace(/^#+\s*/, "")}
+      </p>;
+
+    if (line.trim() === "---")
+      return <hr key={i} style={{ margin: "10px 0", border: "none", borderTop: "1px solid var(--border)" }} />;
+
+    if (line.trim() === "")
+      return <div key={i} style={{ height: 6 }} />;
+
+    return <p key={i} style={{ margin: "2px 0" }}>{parts}</p>;
+  });
+}
+
 export default function AiChatPage() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: `Hello ${user?.full_name?.split(" ")[0] || "there"}! 👋\n\nI'm your **Virtual Finance Assistant** — an AI financial advisor powered by your real financial data.\n\nEvery answer I give is grounded in your actual income, expenses, investments, and loans. No generic advice — just personalised insights.\n\n**Ask me anything about your finances!**`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{
+    id: "welcome", role: "assistant",
+    content: `Hello ${user?.full_name?.split(" ")[0] || "there"}! 👋\n\nI'm your **Virtual Finance Assistant** — an AI financial advisor powered by your real financial data.\n\nEvery answer I give is grounded in your actual income, expenses, investments, and loans. No generic advice — just personalised insights.\n\n**Ask me anything about your finances!**`,
+    timestamp: new Date(),
+  }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => { scrollToBottom(); }, [messages]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const handleSend = async () => {
     const text = input.trim();
     if (!text || loading) return;
 
-    // Add user message
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: text,
-      timestamp: new Date(),
-    };
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: text, timestamp: new Date() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
 
     try {
-      // Build conversation history (exclude welcome message, last 20 messages)
       const history: AiChatMessage[] = messages
-        .filter((m) => m.id !== "welcome")
-        .slice(-20)
+        .filter((m) => m.id !== "welcome").slice(-20)
         .map((m) => ({ role: m.role, content: m.content }));
-
-      // Add the current user message to history
       history.push({ role: "user", content: text });
 
-      // Call the AI endpoint
       const result = await aiApi.chat(text, history.slice(0, -1));
-
-      const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: result.response,
-        timestamp: new Date(),
-        provider: result.provider,
-        model: result.model,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(), role: "assistant",
+        content: result.response, timestamp: new Date(),
+        provider: result.provider, model: result.model,
+      }]);
     } catch (err: unknown) {
-      console.error("AI chat error:", err);
       const errMsg = err instanceof Error ? err.message : "Unknown error";
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `⚠️ **Error communicating with the AI advisor.**\n\n${errMsg}\n\nPlease make sure:\n• The backend is running on port 8000\n• Your Gemini/OpenAI API key is configured in \`.env\`\n• You have some financial data added (income, expenses, investments)`,
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(), role: "assistant",
+        content: `⚠️ **Error communicating with the AI advisor.**\n\n${errMsg}\n\nPlease make sure:\n• The backend is running on port 8000\n• Your Gemini/OpenAI API key is configured in \`.env\`\n• You have some financial data added`,
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleNewChat = () => {
-    setMessages([messages[0]]); // Keep welcome message
-  };
-
-  const quickPrompts = [
-    "Am I saving enough?",
-    "Where should I invest next?",
-    "How to reduce my debt?",
-    "Can I retire by 45?",
-    "Analyse my financial health",
-    "How to improve my savings rate?",
-  ];
-
-  /**
-   * Render markdown-ish content:
-   *  - **bold** → <strong>
-   *  - Bullet points
-   *  - Line breaks
-   */
-  const renderContent = (content: string) => {
-    return content.split("\n").map((line, lineIdx) => {
-      // Process bold markers
-      const parts = line.split(/(\*\*.*?\*\*)/g).map((part, i) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return <strong key={i} className="font-semibold" style={{ color: "var(--text-primary)" }}>{part.slice(2, -2)}</strong>;
-        }
-        return <span key={i}>{part}</span>;
-      });
-
-      // Bullet points
-      if (line.trim().startsWith("• ") || line.trim().startsWith("- ") || line.trim().startsWith("* ")) {
-        return (
-          <div key={lineIdx} className="flex gap-2 pl-2 my-0.5">
-            <span style={{ color: "var(--accent-primary)" }}>•</span>
-            <span>{parts}</span>
-          </div>
-        );
-      }
-
-      // Numbered lists
-      if (/^\d+\.\s/.test(line.trim())) {
-        return (
-          <div key={lineIdx} className="flex gap-2 pl-2 my-0.5">
-            <span style={{ color: "var(--accent-primary)" }}>{line.trim().match(/^\d+/)?.[0]}.</span>
-            <span>{parts.slice(1)}</span>
-          </div>
-        );
-      }
-
-      // Headings (## or ###)
-      if (line.trim().startsWith("## ")) {
-        return <p key={lineIdx} className="font-bold text-base mt-3 mb-1" style={{ color: "var(--text-primary)" }}>{line.replace(/^#+\s*/, "")}</p>;
-      }
-      if (line.trim().startsWith("# ")) {
-        return <p key={lineIdx} className="font-bold text-lg mt-3 mb-1 gradient-text">{line.replace(/^#+\s*/, "")}</p>;
-      }
-
-      // Horizontal rule
-      if (line.trim() === "---" || line.trim() === "***") {
-        return <hr key={lineIdx} className="my-3 border-0 h-px" style={{ background: "var(--border-color)" }} />;
-      }
-
-      // Empty line
-      if (line.trim() === "") {
-        return <div key={lineIdx} className="h-2" />;
-      }
-
-      return <p key={lineIdx} className="my-0.5">{parts}</p>;
-    });
-  };
-
   return (
-    <div className="flex flex-col" style={{ height: "calc(100vh - 120px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)", gap: 0 }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--gradient-primary)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexShrink: 0 }}
+        className="fade-up">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: "var(--r-md)",
+            background: "var(--grad-primary)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
             <Bot size={20} color="white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-              Virtual CFO
-            </h1>
-            <div className="flex items-center gap-1.5">
-              <Zap size={12} className="text-emerald-400" />
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                AI-Powered • Data-Grounded
-              </span>
+            <h1 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>DhanSathi Chat</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Zap size={11} style={{ color: "var(--green)" }} />
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>AI-Powered · Data-Grounded</span>
             </div>
           </div>
         </div>
-        <button onClick={handleNewChat}
-          className="btn-secondary flex items-center gap-2 text-xs py-2">
-          <RefreshCw size={14} /> New Chat
+        <button className="btn btn-secondary" style={{ fontSize: 12, padding: "7px 14px" }}
+          onClick={() => setMessages([messages[0]])}>
+          <RefreshCw size={13} /> New Chat
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingRight: 4, paddingBottom: 8 }}>
         {messages.map((msg) => (
-          <div key={msg.id}
-            className={`flex gap-3 animate-fade-in ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+          <div key={msg.id} className="fade-in"
+            style={{ display: "flex", gap: 10, flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
             {/* Avatar */}
-            <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
-              style={{
-                background: msg.role === "user" ? "var(--gradient-accent)" : "var(--gradient-primary)",
-              }}>
-              {msg.role === "user"
-                ? <User size={16} color="white" />
-                : <Sparkles size={16} color="white" />}
+            <div style={{
+              width: 32, height: 32, borderRadius: "var(--r-sm)", flexShrink: 0,
+              background: msg.role === "user" ? "var(--grad-teal)" : "var(--grad-primary)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {msg.role === "user" ? <User size={15} color="white" /> : <Sparkles size={15} color="white" />}
             </div>
+
             {/* Bubble */}
-            <div className="flex flex-col max-w-[80%]">
-              <div className="rounded-2xl px-4 py-3"
-                style={{
-                  background: msg.role === "user"
-                    ? "rgba(99, 102, 241, 0.15)"
-                    : "var(--bg-card)",
-                  border: `1px solid ${msg.role === "user" ? "var(--border-glow)" : "var(--border-color)"}`,
-                }}>
-                <div className="text-sm leading-relaxed"
-                  style={{ color: "var(--text-primary)" }}>
-                  {msg.role === "user"
-                    ? <p className="whitespace-pre-wrap">{msg.content}</p>
-                    : renderContent(msg.content)}
-                </div>
+            <div style={{ maxWidth: "78%", display: "flex", flexDirection: "column" }}>
+              <div style={{
+                padding: "10px 14px", borderRadius: "var(--r-lg)",
+                background: msg.role === "user" ? "rgba(99,102,241,0.12)" : "var(--bg-card)",
+                border: `1px solid ${msg.role === "user" ? "rgba(99,102,241,0.25)" : "var(--border)"}`,
+                fontSize: 13, lineHeight: 1.65, color: "var(--text-primary)",
+              }}>
+                {msg.role === "user"
+                  ? <p style={{ whiteSpace: "pre-wrap" }}>{msg.content}</p>
+                  : renderContent(msg.content)}
               </div>
-              {/* Meta info */}
-              <div className="flex items-center gap-3 mt-1 px-1">
-                <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, paddingLeft: 4 }}>
+                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
                   {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </p>
+                </span>
                 {msg.provider && msg.provider !== "none" && (
-                  <div className="flex items-center gap-1">
-                    <Info size={10} style={{ color: "var(--text-muted)" }} />
-                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <Info size={9} style={{ color: "var(--text-muted)" }} />
+                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
                       {msg.provider}{msg.model ? ` · ${msg.model}` : ""}
-                    </p>
+                    </span>
                   </div>
                 )}
               </div>
@@ -250,42 +180,51 @@ export default function AiChatPage() {
         ))}
 
         {loading && (
-          <div className="flex gap-3 animate-fade-in">
-            <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
-              style={{ background: "var(--gradient-primary)" }}>
-              <Sparkles size={16} color="white" />
+          <div className="fade-in" style={{ display: "flex", gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "var(--r-sm)",
+              background: "var(--grad-primary)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <Sparkles size={15} color="white" />
             </div>
-            <div className="glass-card px-4 py-3 flex items-center gap-3">
-              <Loader2 size={16} className="animate-spin" style={{ color: "var(--accent-primary)" }} />
+            <div className="card card-p-sm" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Loader2 size={15} style={{ color: "var(--indigo)", animation: "spin 1s linear infinite" }} />
               <div>
-                <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                  Analysing your financial data...
-                </span>
-                <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Analysing your financial data...</p>
+                <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
                   Reading income, expenses, investments, loans & metrics
                 </p>
               </div>
             </div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick prompts (show only at start) */}
+      {/* Quick prompts */}
       {messages.length <= 1 && (
-        <div className="mb-3 animate-fade-in" style={{ animationDelay: "300ms" }}>
-          <p className="text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>
+        <div style={{ marginBottom: 12, flexShrink: 0 }} className="fade-in">
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Suggested questions
           </p>
-          <div className="flex flex-wrap gap-2">
-            {quickPrompts.map((p) => (
-              <button key={p} onClick={() => { setInput(p); inputRef.current?.focus(); }}
-                className="text-xs px-3 py-2 rounded-xl transition-all hover:scale-[1.02]"
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {QUICK_PROMPTS.map((p) => (
+              <button key={p}
+                onClick={() => { setInput(p); inputRef.current?.focus(); }}
                 style={{
-                  background: "rgba(99,102,241,0.08)",
-                  border: "1px solid var(--border-color)",
-                  color: "var(--text-secondary)",
+                  fontSize: 12, padding: "6px 12px", borderRadius: "var(--r-md)",
+                  background: "rgba(99,102,241,0.07)", border: "1px solid var(--border)",
+                  color: "var(--text-secondary)", cursor: "pointer",
+                  transition: "all 200ms var(--ease)",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.14)";
+                  (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.07)";
+                  (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
                 }}>
                 {p}
               </button>
@@ -294,25 +233,35 @@ export default function AiChatPage() {
         </div>
       )}
 
-      {/* Input bar */}
-      <div className="glass-card p-3 flex items-center gap-3">
+      {/* Input */}
+      <div className="card" style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 14px", flexShrink: 0,
+      }}>
         <input ref={inputRef} type="text" value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
           placeholder="Ask your Virtual CFO anything..."
-          className="flex-1 bg-transparent text-sm outline-none"
-          style={{ color: "var(--text-primary)" }}
+          style={{
+            flex: 1, background: "transparent", border: "none", outline: "none",
+            fontSize: 13, color: "var(--text-primary)",
+          }}
           disabled={loading} />
         <button onClick={handleSend} disabled={loading || !input.trim()}
-          className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
           style={{
-            background: input.trim() ? "var(--gradient-primary)" : "transparent",
-            border: input.trim() ? "none" : "1px solid var(--border-color)",
-            opacity: input.trim() ? 1 : 0.4,
+            width: 34, height: 34, borderRadius: "var(--r-sm)",
+            border: input.trim() ? "none" : "1px solid var(--border)",
+            background: input.trim() ? "var(--grad-primary)" : "transparent",
+            cursor: input.trim() ? "pointer" : "default",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: input.trim() ? 1 : 0.35, transition: "all 200ms var(--ease)",
+            flexShrink: 0,
           }}>
-          <Send size={16} color={input.trim() ? "white" : "#64748b"} />
+          <Send size={15} color={input.trim() ? "white" : "#64748b"} />
         </button>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

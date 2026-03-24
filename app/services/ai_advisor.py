@@ -179,7 +179,6 @@ Investment Suggestions:
 Response style:
 - Start with a direct answer
 - Then briefly explain why
-- End with 1–2 clear next steps
 - Keep it conversational and easy to understand
 
 Safety:

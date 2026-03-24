@@ -1,12 +1,9 @@
 "use client";
-/**
- * Auth Page — Login & Signup with animated card flip
- */
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { Wallet, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Wallet, Eye, EyeOff, ArrowRight, TrendingUp, Shield, Bot } from "lucide-react";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,11 +21,8 @@ export default function AuthPage() {
     setError("");
     setLoading(true);
     try {
-      if (isLogin) {
-        await login(email, password);
-      } else {
-        await signup(email, name, password);
-      }
+      if (isLogin) await login(email, password);
+      else await signup(email, name, password);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -37,123 +31,201 @@ export default function AuthPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex page-shell" style={{ background: "var(--bg-primary)" }}>
-      {/* ── Left: decorative ──────────────────────────── */}
-      <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden">
-        {/* Gradient orbs */}
-        <div className="absolute w-[500px] h-[500px] rounded-full opacity-20 blur-[120px]"
-          style={{ background: "var(--accent-primary)", top: "10%", left: "10%" }} />
-        <div className="absolute w-[400px] h-[400px] rounded-full opacity-15 blur-[100px]"
-          style={{ background: "var(--accent-secondary)", bottom: "10%", right: "5%" }} />
-        <div className="absolute w-[300px] h-[300px] rounded-full opacity-10 blur-[80px]"
-          style={{ background: "var(--accent-purple)", top: "50%", left: "50%" }} />
+  const features = [
+    { icon: TrendingUp, label: "Portfolio Tracking", desc: "Real-time P&L across all assets" },
+    { icon: Shield, label: "Financial Health", desc: "Savings rate, DTI & risk metrics" },
+    { icon: Bot, label: "AI Advisor", desc: "Personalised insights from your data" },
+  ];
 
-        <div className="relative z-10 text-center max-w-xl px-10">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8"
-            style={{ background: "var(--gradient-primary)" }}>
-            <Wallet size={36} color="white" />
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex",
+      background: "var(--bg)", position: "relative", zIndex: 1,
+    }}>
+      {/* Left panel */}
+      <div style={{
+        flex: 1, display: "none", alignItems: "center", justifyContent: "center",
+        padding: "60px 48px", position: "relative",
+      }}
+        className="auth-left"
+      >
+        {/* Glow orbs */}
+        <div style={{
+          position: "absolute", width: 400, height: 400, borderRadius: "50%",
+          background: "var(--indigo)", opacity: 0.08, filter: "blur(100px)",
+          top: "5%", left: "5%", pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", width: 300, height: 300, borderRadius: "50%",
+          background: "var(--teal)", opacity: 0.06, filter: "blur(80px)",
+          bottom: "10%", right: "10%", pointerEvents: "none",
+        }} />
+
+        <div style={{ position: "relative", maxWidth: 440 }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: "var(--grad-primary)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 8px 24px rgba(99,102,241,0.4)",
+            }}>
+              <Wallet size={24} color="white" />
+            </div>
+            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em" }}
+              className="gradient-text">
+              DhanSathi
+            </span>
           </div>
-          <h1 className="text-5xl font-bold mb-5 gradient-text">FinanceIQ</h1>
-          <p className="text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            AI-Powered Personal Finance Intelligence.
-            Track, analyse, simulate — all in one place.
+
+          <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2, marginBottom: 16 }}>
+            Your finances,<br />
+            <span className="gradient-text">intelligently managed.</span>
+          </h1>
+          <p style={{ fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 48 }}>
+            AI-powered personal finance platform. Track every rupee, analyse your health, and get advice grounded in your real data.
           </p>
 
-          <div className="mt-12 grid grid-cols-3 gap-6">
-            {["Portfolio Tracking", "Smart Metrics", "AI Advisor"].map((f) => (
-              <div key={f} className="rounded-2xl p-5 text-center"
-                style={{
-                  background: "rgba(99, 102, 241, 0.06)",
-                  border: "1px solid var(--border-color)",
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {features.map(({ icon: Icon, label, desc }) => (
+              <div key={label} style={{
+                display: "flex", alignItems: "center", gap: 16,
+                padding: "16px 20px",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-lg)",
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "var(--r-sm)",
+                  background: "rgba(99,102,241,0.12)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
                 }}>
-                <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>{f}</p>
+                  <Icon size={18} style={{ color: "var(--indigo-light)" }} />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{label}</p>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{desc}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Right: auth form ─────────────────────────── */}
-      <div className="w-full lg:w-[560px] flex items-center justify-center p-8 lg:p-14">
-        <div className="w-full max-w-md animate-fade-in">
+      {/* Right panel — form */}
+      <div style={{
+        width: "100%", maxWidth: 480, display: "flex",
+        alignItems: "center", justifyContent: "center",
+        padding: "40px 32px",
+        borderLeft: "1px solid var(--border)",
+      }}
+        className="auth-right"
+      >
+        <div style={{ width: "100%", maxWidth: 400 }} className="fade-up">
           {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-10">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: "var(--gradient-primary)" }}>
-              <Wallet size={28} color="white" />
+          <div style={{ textAlign: "center", marginBottom: 32 }} className="auth-mobile-logo">
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: "var(--grad-primary)",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              marginBottom: 12,
+            }}>
+              <Wallet size={22} color="white" />
             </div>
-            <h1 className="text-3xl font-bold gradient-text">FinanceIQ</h1>
+            <div style={{ fontSize: 24, fontWeight: 800 }} className="gradient-text">DhanSathi</div>
           </div>
 
-          <div className="glass-card p-8 md:p-10">
-            <h2 className="section-title" style={{ color: "var(--text-primary)" }}>
-              {isLogin ? "Welcome back" : "Create account"}
-            </h2>
-            <p className="section-subtitle">
-              {isLogin ? "Sign in to continue to your dashboard" : "Get started with your free account"}
-            </p>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+            {isLogin ? "Welcome back" : "Create your account"}
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 28 }}>
+            {isLogin ? "Sign in to your dashboard" : "Start managing your finances smarter"}
+          </p>
 
-            {error && (
-              <div className="mt-6 p-4 rounded-2xl text-sm font-medium"
-                style={{ background: "rgba(239,68,68,0.1)", color: "var(--accent-red)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                {error}
+          {error && (
+            <div style={{
+              padding: "12px 16px", borderRadius: "var(--r-md)", marginBottom: 20,
+              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+              color: "var(--red)", fontSize: 13,
+            }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {!isLogin && (
+              <div>
+                <label className="label">Full Name</label>
+                <input className="input" placeholder="John Doe"
+                  value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
             )}
-
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-              {!isLogin && (
-                <div>
-                  <label className="label">Full Name</label>
-                  <input className="input-field" placeholder="John Doe"
-                    value={name} onChange={(e) => setName(e.target.value)} required />
-                </div>
-              )}
-              <div>
-                <label className="label">Email</label>
-                <input type="email" className="input-field" placeholder="you@example.com"
-                  value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div>
-                <label className="label">Password</label>
-                <div className="relative">
-                  <input type={showPw ? "text" : "password"} className="input-field pr-12"
-                    placeholder="••••••••" value={password}
-                    onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-                  <button type="button"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                    onClick={() => setShowPw(!showPw)}>
-                    {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-1">
-                <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-base"
-                  disabled={loading}>
-                  {loading ? (
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      {isLogin ? "Sign In" : "Create Account"}
-                      <ArrowRight size={18} />
-                    </>
-                  )}
+            <div>
+              <label className="label">Email</label>
+              <input type="email" className="input" placeholder="you@example.com"
+                value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div>
+              <label className="label">Password</label>
+              <div style={{ position: "relative" }}>
+                <input type={showPw ? "text" : "password"} className="input"
+                  style={{ paddingRight: 44 }}
+                  placeholder="••••••••" value={password}
+                  onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                <button type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "var(--text-muted)", display: "flex",
+                  }}>
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-            </form>
+            </div>
 
-            <p className="text-center mt-8 text-sm" style={{ color: "var(--text-muted)" }}>
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <button className="font-semibold hover:underline"
-                style={{ color: "var(--accent-primary-light)" }}
-                onClick={() => { setIsLogin(!isLogin); setError(""); }}>
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
-            </p>
-          </div>
+            <button type="submit" className="btn btn-primary"
+              style={{ width: "100%", padding: "12px", marginTop: 4 }}
+              disabled={loading}>
+              {loading ? (
+                <span style={{
+                  width: 18, height: 18, borderRadius: "50%",
+                  border: "2px solid rgba(255,255,255,0.3)",
+                  borderTopColor: "white",
+                  animation: "spin 0.8s linear infinite",
+                  display: "inline-block",
+                }} />
+              ) : (
+                <>
+                  {isLogin ? "Sign In" : "Create Account"}
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p style={{ textAlign: "center", marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--indigo-light)", fontWeight: 600, fontSize: 13 }}
+              onClick={() => { setIsLogin(!isLogin); setError(""); }}>
+              {isLogin ? "Sign up" : "Sign in"}
+            </button>
+          </p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .auth-left { display: none; }
+        .auth-mobile-logo { display: block; }
+        @media (min-width: 900px) {
+          .auth-left { display: flex !important; }
+          .auth-right { border-left: 1px solid var(--border); }
+          .auth-mobile-logo { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,19 +1,9 @@
 "use client";
-/**
- * auth-context.tsx — Global authentication state
- *
- * Wraps the app with user state, handles login/signup/logout,
- * and persists the JWT in localStorage.
- */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { auth as authApi, setToken, clearToken, getToken, type AuthResponse } from "./api";
 
-interface User {
-  id: number;
-  email: string;
-  full_name: string;
-}
+interface User { id: number; email: string; full_name: string; }
 
 interface AuthContextType {
   user: User | null;
@@ -24,23 +14,18 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  login: async () => {},
-  signup: async () => {},
-  logout: () => {},
+  user: null, loading: true,
+  login: async () => {}, signup: async () => {}, logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount, try to restore session from stored token
   useEffect(() => {
     const token = getToken();
     if (token) {
-      authApi
-        .me()
+      authApi.me()
         .then((u) => setUser({ id: u.id, email: u.email, full_name: u.full_name }))
         .catch(() => clearToken())
         .finally(() => setLoading(false));
@@ -61,10 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser({ id: res.user.id, email: res.user.email, full_name: res.user.full_name });
   }, []);
 
-  const logout = useCallback(() => {
-    clearToken();
-    setUser(null);
-  }, []);
+  const logout = useCallback(() => { clearToken(); setUser(null); }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout }}>

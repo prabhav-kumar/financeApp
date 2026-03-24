@@ -1,7 +1,4 @@
 "use client";
-/**
- * StatCard.tsx — Reusable stat display card for dashboards
- */
 
 import React from "react";
 import { type LucideIcon } from "lucide-react";
@@ -10,45 +7,37 @@ interface StatCardProps {
   label: string;
   value: string;
   icon: LucideIcon;
-  trend?: string;       // e.g. "+12.5%"
+  trend?: string;
   trendUp?: boolean;
   iconColor?: string;
-  delay?: number;       // animation delay in ms
+  delay?: number;
 }
 
-export default function StatCard({ label, value, icon: Icon, trend, trendUp, iconColor = "#6366f1", delay = 0 }: StatCardProps) {
+export default function StatCard({
+  label, value, icon: Icon, trend, trendUp,
+  iconColor = "#6366f1", delay = 0,
+}: StatCardProps) {
   return (
-    <div className="glass-card p-5 md:p-6 animate-fade-in group" style={{ animationDelay: `${delay}ms` }}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="relative">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-            style={{ 
-              background: `linear-gradient(135deg, ${iconColor}20, ${iconColor}10)`,
-              boxShadow: `0 6px 20px ${iconColor}15`
-            }}>
-            <Icon size={22} style={{ color: iconColor }} strokeWidth={2.5} />
-          </div>
-          <div className="absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            style={{ 
-              background: `radial-gradient(circle at center, ${iconColor}20, transparent 70%)`,
-              filter: 'blur(8px)',
-              zIndex: -1
-            }} />
+    <div
+      className="card card-p fade-up"
+      style={{ animationDelay: `${delay}ms`, animationFillMode: "both" }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+        <div className="icon-box" style={{
+          width: 40, height: 40,
+          background: `${iconColor}18`,
+          border: `1px solid ${iconColor}25`,
+        }}>
+          <Icon size={20} style={{ color: iconColor }} strokeWidth={2} />
         </div>
         {trend && (
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full transition-all duration-300 ${trendUp ? "badge-success" : "badge-danger"}`}>
+          <span className={trendUp ? "badge badge-green" : "badge badge-red"}>
             {trend}
           </span>
         )}
       </div>
-
-      <div className="mt-auto">
-        <p className="stat-value leading-tight mb-1.5 transition-colors duration-300 break-words" 
-          style={{ color: "var(--text-primary)" }}>
-          {value}
-        </p>
-        <p className="stat-label leading-tight">{label}</p>
-      </div>
+      <p className="stat-val" style={{ marginBottom: 4 }}>{value}</p>
+      <p className="stat-lbl">{label}</p>
     </div>
   );
 }
