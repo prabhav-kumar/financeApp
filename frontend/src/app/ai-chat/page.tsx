@@ -29,7 +29,7 @@ export default function AiChatPage() {
     {
       id: "welcome",
       role: "assistant",
-      content: `Hello ${user?.full_name?.split(" ")[0] || "there"}! 👋\n\nI'm your **Virtual CFO** — an AI financial advisor powered by your real financial data.\n\nI can help you with:\n• **Savings analysis** — "Am I saving enough?"\n• **Investment guidance** — "Where should I invest?"\n• **Debt strategy** — "How to reduce my debt faster?"\n• **Retirement planning** — "Can I retire early?"\n• **Risk assessment** — "What's my risk profile?"\n• **Budget optimisation** — "How can I cut expenses?"\n\nEvery answer I give is grounded in your actual income, expenses, investments, and loans. No generic advice — just personalised insights.\n\n**Ask me anything about your finances!**`,
+      content: `Hello ${user?.full_name?.split(" ")[0] || "there"}! 👋\n\nI'm your **Virtual Finance Assistant** — an AI financial advisor powered by your real financial data.\n\nEvery answer I give is grounded in your actual income, expenses, investments, and loans. No generic advice — just personalised insights.\n\n**Ask me anything about your finances!**`,
       timestamp: new Date(),
     },
   ]);
