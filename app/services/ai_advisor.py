@@ -29,6 +29,12 @@ from app.models.investment import Investment
 from app.models.loan import Loan
 from app.models.income import Income
 from app.models.expense import Expense
+from app.models.budget import Budget
+from app.models.emergency_fund import EmergencyFund
+from app.models.insurance import InsurancePolicy
+from app.models.goal import FinancialGoal
+from app.models.retirement import RetirementPlan
+from app.models.tax import TaxRecord
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -57,6 +63,12 @@ def _build_financial_context(db: Session, user_id: int) -> str:
         loans = db.query(Loan).filter(Loan.user_id == user_id, Loan.is_active == 1).all()
         incomes = db.query(Income).filter(Income.user_id == user_id, Income.is_active == 1).all()
         expenses = db.query(Expense).filter(Expense.user_id == user_id, Expense.is_active == 1).all()
+        budgets = db.query(Budget).filter(Budget.user_id == user_id).order_by(Budget.month.desc()).limit(30).all()
+        emergency_funds = db.query(EmergencyFund).filter(EmergencyFund.user_id == user_id).all()
+        insurance_policies = db.query(InsurancePolicy).filter(InsurancePolicy.user_id == user_id, InsurancePolicy.is_active == 1).all()
+        goals = db.query(FinancialGoal).filter(FinancialGoal.user_id == user_id).all()
+        retirement_plans = db.query(RetirementPlan).filter(RetirementPlan.user_id == user_id).all()
+        tax_records = db.query(TaxRecord).filter(TaxRecord.user_id == user_id).order_by(TaxRecord.financial_year.desc()).limit(20).all()
         
         # Build comprehensive context
         context = f"""USER'S COMPLETE FINANCIAL PROFILE:
@@ -143,7 +155,83 @@ Rating: {diversification.rating.replace('_', ' ').title()}
 
 ═══════════════════════════════════════════════════════════
 """
-        
+
+        # ── Emergency Fund ──────────────────────────────
+        context += "\nEMERGENCY FUND\n" + "═" * 55 + "\n"
+        if emergency_funds:
+            for ef in emergency_funds:
+                progress = min(ef.current_amount / ef.target_amount * 100, 100) if ef.target_amount > 0 else 0
+                context += f"  • {ef.fund_name}: ₹{ef.current_amount:,.0f} / ₹{ef.target_amount:,.0f} ({progress:.0f}% funded, {ef.months_of_expenses}-month target)\n"
+        else:
+            context += "  • No emergency fund set up\n"
+
+        # ── Insurance ───────────────────────────────────
+        context += "\nINSURANCE COVERAGE\n" + "═" * 55 + "\n"
+        if insurance_policies:
+            total_coverage = sum(p.coverage_amount for p in insurance_policies)
+            total_premium = sum(p.annual_premium for p in insurance_policies)
+            context += f"  Total Coverage: ₹{total_coverage:,.0f} | Annual Premium: ₹{total_premium:,.0f}\n"
+            for p in insurance_policies:
+                context += f"  • {p.policy_name} ({p.insurance_type.value}): ₹{p.coverage_amount:,.0f} cover @ ₹{p.annual_premium:,.0f}/yr\n"
+        else:
+            context += "  • No insurance policies recorded\n"
+
+        # ── Financial Goals ─────────────────────────────
+        context += "\nFINANCIAL GOALS\n" + "═" * 55 + "\n"
+        if goals:
+            for g in goals:
+                progress = min(g.current_amount / g.target_amount * 100, 100) if g.target_amount > 0 else 0
+                context += f"  • {g.goal_name} ({g.category.value}): ₹{g.current_amount:,.0f} / ₹{g.target_amount:,.0f} ({progress:.0f}%)"
+                if g.target_date:
+                    context += f" — target: {g.target_date}"
+                context += "\n"
+        else:
+            context += "  • No financial goals set\n"
+
+        # ── Retirement ──────────────────────────────────
+        context += "\nRETIREMENT PLANNING\n" + "═" * 55 + "\n"
+        if retirement_plans:
+            total_corpus = sum(p.current_value for p in retirement_plans)
+            total_monthly = sum(p.monthly_contribution for p in retirement_plans)
+            context += f"  Total Current Corpus: ₹{total_corpus:,.0f} | Monthly Contribution: ₹{total_monthly:,.0f}\n"
+            for p in retirement_plans:
+                years = (p.retirement_age - p.current_age) if p.current_age and p.retirement_age else None
+                context += f"  • {p.plan_name} ({p.account_type.value}): ₹{p.current_value:,.0f} corpus"
+                if years:
+                    context += f", {years} years to retirement @ {p.expected_return_rate}% return"
+                if p.desired_monthly_income:
+                    context += f", desired ₹{p.desired_monthly_income:,.0f}/month post-retirement"
+                context += "\n"
+        else:
+            context += "  • No retirement plans recorded\n"
+
+        # ── Tax ─────────────────────────────────────────
+        context += "\nTAX PLANNING\n" + "═" * 55 + "\n"
+        if tax_records:
+            fy_groups: dict = {}
+            for r in tax_records:
+                fy_groups.setdefault(r.financial_year, []).append(r)
+            for fy, records in list(fy_groups.items())[:2]:
+                total_deductions = sum(r.deduction_amount for r in records)
+                total_paid = sum(r.tax_paid or 0 for r in records)
+                context += f"  FY {fy} ({records[0].regime.value} regime): Gross ₹{records[0].gross_income:,.0f}, Deductions ₹{total_deductions:,.0f}, Tax Paid ₹{total_paid:,.0f}\n"
+        else:
+            context += "  • No tax records added\n"
+
+        # ── Budgeting ───────────────────────────────────
+        context += "\nBUDGETING\n" + "═" * 55 + "\n"
+        if budgets:
+            months_seen = list(dict.fromkeys(b.month for b in budgets))[:2]
+            for month in months_seen:
+                month_items = [b for b in budgets if b.month == month]
+                total_b = sum(b.budgeted_amount for b in month_items)
+                total_a = sum(b.actual_amount for b in month_items)
+                variance = total_b - total_a
+                status_str = "under budget" if variance >= 0 else "over budget"
+                context += f"  {month}: Budgeted ₹{total_b:,.0f} | Actual ₹{total_a:,.0f} | {status_str} by ₹{abs(variance):,.0f}\n"
+        else:
+            context += "  • No budget data recorded\n"
+
         return context
     
     except Exception as e:

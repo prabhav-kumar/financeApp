@@ -12,7 +12,8 @@ from app.config import get_settings
 from app.database import engine, Base
 
 # ── Import all models so Base.metadata knows about them ──
-from app.models import user, income, expense, investment, loan  # noqa: F401
+from app.models import user, income, expense, investment, loan, chat_session  # noqa: F401
+from app.models import budget, emergency_fund, insurance, goal, retirement, tax  # noqa: F401
 
 # ── Import routers ───────────────────────────────────────
 from app.routers import (

@@ -217,11 +217,166 @@ export const simulation = {
 /* ── AI Chat ───────────────────────────────────────────── */
 export interface AiChatMessage { role: "user" | "assistant"; content: string; }
 
+export interface AiInsight {
+  problem: string; impact: string; action: string; severity: "red" | "yellow" | "green";
+}
+export interface AiMetric {
+  label: string; value: string; status: "good" | "warn" | "bad";
+}
+export interface AiScenario {
+  title: string; final_wealth: string; risk: string; time_horizon: string; recommended: boolean;
+}
+export interface AiStructuredResponse {
+  recommendation: { title: string; action: string; amount: string | null };
+  insights: AiInsight[];
+  metrics: AiMetric[];
+  scenarios: AiScenario[];
+  explanation: string[];
+  privacy_safe: boolean;
+}
+
 export interface AiChatResponse {
-  response: string; provider: string; model: string | null; context_summary: string;
+  response: string;
+  provider: string;
+  model: string | null;
+  context_summary: string;
+  verified: boolean;
+  confidence_score: number;
+  attempts: number;
+  verification_note: string;
+}
+
+export interface SessionMessage {
+  id: number; role: string; content: string; created_at: string;
+}
+export interface SessionOut {
+  id: number; title: string; created_at: string; updated_at: string; message_count: number;
+}
+export interface SessionDetail {
+  id: number; title: string; created_at: string; updated_at: string; messages: SessionMessage[];
+}
+export interface SessionChatResponse {
+  message: SessionMessage;
+  session_title: string;
+  verified: boolean;
+  confidence_score: number;
+  attempts: number;
+  verification_note: string;
 }
 
 export const ai = {
-  chat: (message: string, history: AiChatMessage[] = []) =>
-    request<AiChatResponse>("/ai/chat", { method: "POST", body: JSON.stringify({ message, history }) }),
+  // Session management
+  listSessions: () => request<SessionOut[]>("/ai/sessions"),
+  createSession: () => request<SessionDetail>("/ai/sessions", { method: "POST" }),
+  getSession: (id: number) => request<SessionDetail>(`/ai/sessions/${id}`),
+  deleteSession: (id: number) => request<void>(`/ai/sessions/${id}`, { method: "DELETE" }),
+  renameSession: (id: number, title: string) =>
+    request<SessionOut>(`/ai/sessions/${id}/title`, { method: "PATCH", body: JSON.stringify({ title }) }),
+  // Chat within a session
+  chat: (sessionId: number, message: string) =>
+    request<SessionChatResponse>(`/ai/sessions/${sessionId}/chat`, { method: "POST", body: JSON.stringify({ message }) }),
+};
+
+/* ── Budget ────────────────────────────────────────────── */
+export interface Budget {
+  id: number; month: string; category: string;
+  budgeted_amount: number; actual_amount: number; variance: number;
+  notes: string | null; created_at: string;
+}
+export interface BudgetSummary {
+  month: string; total_budgeted: number; total_actual: number; total_variance: number;
+  category_breakdown: Record<string, { budgeted: number; actual: number; variance: number }>;
+}
+export const budget = {
+  list: (month?: string) => request<Budget[]>(month ? `/budget/?month=${month}` : "/budget/"),
+  summary: (month: string) => request<BudgetSummary>(`/budget/summary?month=${month}`),
+  add: (data: Partial<Budget>) => request<Budget>("/budget/", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<Budget>) => request<Budget>(`/budget/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<void>(`/budget/${id}`, { method: "DELETE" }),
+};
+
+/* ── Emergency Fund ────────────────────────────────────── */
+export interface EmergencyFund {
+  id: number; fund_name: string; current_amount: number; target_amount: number;
+  monthly_contribution: number; months_of_expenses: number;
+  progress_pct: number; months_to_goal: number | null; created_at: string;
+}
+export const emergencyFund = {
+  list: () => request<EmergencyFund[]>("/emergency-fund/"),
+  add: (data: Partial<EmergencyFund>) => request<EmergencyFund>("/emergency-fund/", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<EmergencyFund>) => request<EmergencyFund>(`/emergency-fund/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<void>(`/emergency-fund/${id}`, { method: "DELETE" }),
+};
+
+/* ── Insurance ─────────────────────────────────────────── */
+export interface InsurancePolicy {
+  id: number; policy_name: string; insurance_type: string; insurer: string | null;
+  coverage_amount: number; annual_premium: number; monthly_premium: number;
+  policy_start_date: string | null; policy_end_date: string | null;
+  is_active: number; created_at: string;
+}
+export interface InsuranceSummary {
+  total_coverage: number; total_annual_premium: number; total_monthly_premium: number;
+  active_policies: number; coverage_by_type: Record<string, { coverage: number; annual_premium: number }>;
+}
+export const insurance = {
+  list: () => request<InsurancePolicy[]>("/insurance/"),
+  summary: () => request<InsuranceSummary>("/insurance/summary"),
+  add: (data: Partial<InsurancePolicy>) => request<InsurancePolicy>("/insurance/", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<InsurancePolicy>) => request<InsurancePolicy>(`/insurance/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<void>(`/insurance/${id}`, { method: "DELETE" }),
+};
+
+/* ── Financial Goals ───────────────────────────────────── */
+export interface FinancialGoal {
+  id: number; goal_name: string; category: string; target_amount: number;
+  current_amount: number; monthly_contribution: number; target_date: string | null;
+  status: string; progress_pct: number; months_to_goal: number | null;
+  notes: string | null; created_at: string;
+}
+export const goals = {
+  list: () => request<FinancialGoal[]>("/goals/"),
+  add: (data: Partial<FinancialGoal>) => request<FinancialGoal>("/goals/", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<FinancialGoal>) => request<FinancialGoal>(`/goals/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<void>(`/goals/${id}`, { method: "DELETE" }),
+};
+
+/* ── Retirement ────────────────────────────────────────── */
+export interface RetirementPlan {
+  id: number; plan_name: string; account_type: string; current_value: number;
+  monthly_contribution: number; expected_return_rate: number;
+  current_age: number | null; retirement_age: number;
+  desired_monthly_income: number | null; years_to_retirement: number | null;
+  projected_corpus: number | null; created_at: string;
+}
+export interface RetirementSummary {
+  total_current_corpus: number; total_monthly_contribution: number;
+  projected_total_corpus: number; required_corpus: number | null;
+  readiness_pct: number | null; plans: RetirementPlan[];
+}
+export const retirement = {
+  list: () => request<RetirementPlan[]>("/retirement/"),
+  summary: () => request<RetirementSummary>("/retirement/summary"),
+  add: (data: Partial<RetirementPlan>) => request<RetirementPlan>("/retirement/", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<RetirementPlan>) => request<RetirementPlan>(`/retirement/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<void>(`/retirement/${id}`, { method: "DELETE" }),
+};
+
+/* ── Tax ───────────────────────────────────────────────── */
+export interface TaxRecord {
+  id: number; financial_year: string; regime: string; gross_income: number;
+  deduction_section: string; deduction_label: string; deduction_amount: number;
+  tax_paid: number; created_at: string;
+}
+export interface TaxSummary {
+  financial_year: string; regime: string; gross_income: number;
+  total_deductions: number; taxable_income: number; estimated_tax: number;
+  tax_paid: number; tax_remaining: number; deductions_by_section: Record<string, number>;
+}
+export const tax = {
+  list: (financial_year?: string) => request<TaxRecord[]>(financial_year ? `/tax/?financial_year=${financial_year}` : "/tax/"),
+  summary: (financial_year: string) => request<TaxSummary>(`/tax/summary?financial_year=${financial_year}`),
+  add: (data: Partial<TaxRecord>) => request<TaxRecord>("/tax/", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<TaxRecord>) => request<TaxRecord>(`/tax/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<void>(`/tax/${id}`, { method: "DELETE" }),
 };
