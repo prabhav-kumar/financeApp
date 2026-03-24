@@ -28,6 +28,7 @@ class User(Base):
     expenses = relationship("Expense", back_populates="owner", cascade="all, delete-orphan")
     investments = relationship("Investment", back_populates="owner", cascade="all, delete-orphan")
     loans = relationship("Loan", back_populates="owner", cascade="all, delete-orphan")
+    chat_sessions = relationship("ChatSession", back_populates="owner", cascade="all, delete-orphan")
     budgets = relationship("Budget", back_populates="owner", cascade="all, delete-orphan")
     emergency_funds = relationship("EmergencyFund", back_populates="owner", cascade="all, delete-orphan")
     insurance_policies = relationship("InsurancePolicy", back_populates="owner", cascade="all, delete-orphan")
