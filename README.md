@@ -1,293 +1,221 @@
-# FinanceIQ — AI-Powered Personal Finance Intelligence System
+# DhanSathi — Your AI-Powered Personal Finance Companion
 
-A full-stack platform for **portfolio tracking, financial analysis, simulation, and AI-powered advice**. Think Groww + Virtual CFO.
+DhanSathi is a full-stack personal finance platform built for Indian users. It's part portfolio tracker, part financial health monitor, part Virtual CFO — all in one place. You add your income, expenses, investments, and loans, and DhanSathi gives you a clear picture of where you stand and what to do next.
 
-> **Note:** Users cannot invest through the app — only tracking, analysis, and intelligent recommendations.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | FastAPI (Python 3.11+) |
-| **Frontend** | Next.js 16, Tailwind CSS, Recharts |
-| **Database** | PostgreSQL |
-| **ORM** | SQLAlchemy 2.0 |
-| **Auth** | JWT (python-jose) + bcrypt |
-| **Market Data** | Yahoo Finance (yfinance) |
-| **AI Advisor** | Google Gemini / OpenAI GPT-4 |
+The AI advisor isn't a generic chatbot. It reads your actual financial data before answering — your savings rate, your EMIs, your portfolio P&L — and gives you advice that's specific to your situation. Under the hood it uses a GAN-style dual-LLM system where one model generates the advice and a second model verifies it for accuracy before it reaches you.
 
 ---
 
-## Prerequisites
+## What you can do with it
 
-Before you start, make sure you have these installed:
-
-| Tool | Version | Check Command |
-|------|---------|--------------|
-| **Python** | 3.11+ | `python --version` |
-| **Node.js** | 18+ | `node --version` |
-| **npm** | 9+ | `npm --version` |
-| **PostgreSQL** | 14+ | `psql --version` |
+- Track income from multiple sources (salary, freelance, rental, etc.)
+- Monitor monthly expenses by category
+- Manage your investment portfolio with live market prices from Yahoo Finance
+- Track loans and EMIs, see your debt-to-income ratio
+- Plan and track a monthly budget
+- Set up and monitor an emergency fund
+- Track insurance policies and coverage
+- Set financial goals and track progress
+- Plan for retirement across multiple accounts
+- Manage tax records and deductions
+- Run financial simulations — SIP projections, compound growth, loan payoff
+- Chat with an AI Virtual CFO that knows your actual numbers
+- Full chat history that persists across sessions, GPT-style sidebar
 
 ---
 
-## Step-by-Step Setup
+## Tech stack
 
-### STEP 1 — Clone & Enter the Project
+**Backend** — FastAPI + SQLAlchemy + PostgreSQL + JWT auth
+
+**Frontend** — Next.js 16 + React 19 + Recharts + TypeScript
+
+**AI** — OpenAI / OpenRouter with a GAN-style dual-LLM verification loop
+
+**Market data** — Yahoo Finance (yfinance) for live stock and mutual fund prices
+
+---
+
+## Getting started
+
+### What you need installed
+
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL 14+
+
+### 1. Create the database
 
 ```bash
-cd designathon
-```
-
----
-
-### STEP 2 — Set Up PostgreSQL Database
-
-Open a terminal and create the database:
-
-```bash
-# Windows (if psql is in PATH)
 psql -U postgres -c "CREATE DATABASE financeiq;"
-
-# Or use pgAdmin / any PostgreSQL GUI to create a database named "financeiq"
 ```
 
----
+### 2. Set up your environment
 
-### STEP 3 — Configure Environment Variables
-
-Edit the `.env` file in the project root:
+Copy `.env.example` to `.env` and fill in your values:
 
 ```env
-# --- Database ---
-# Replace with your actual PostgreSQL credentials
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/financeiq
-
-# --- JWT ---
-# Change this to a random secret string (min 32 chars)
-SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
-
-# --- AI Advisor (choose one) ---
-# Option A: Google Gemini (recommended — free tier available)
-AI_PROVIDER=gemini
-GEMINI_API_KEY=your_gemini_api_key_here
-# Get a free key at: https://aistudio.google.com/apikey
-
-# Option B: OpenAI
-# AI_PROVIDER=openai
-# OPENAI_API_KEY=your_openai_api_key_here
+SECRET_KEY=some-long-random-string-at-least-32-chars
+OPENAI_API_KEY=your-openrouter-or-openai-key
+OPENAI_MODEL=openai/gpt-4o-mini
 ```
 
-> **Important:** At minimum, update `DATABASE_URL` with your PostgreSQL password and set a `SECRET_KEY`.
+Get an OpenRouter key at https://openrouter.ai/keys — it gives you access to multiple models with one key.
 
----
-
-### STEP 4 — Set Up the Backend (Python)
+### 3. Start the backend
 
 ```bash
-# Create a virtual environment
+# Create and activate a virtual environment
 python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS / Linux
 
-# Activate it
-venv\Scripts\activate          # Windows (Command Prompt)
-# venv\Scripts\Activate.ps1    # Windows (PowerShell)
-# source venv/bin/activate     # macOS / Linux
-
-# Install all Python dependencies
 pip install -r requirements.txt
-
-# Start the backend server
 uvicorn app.main:app --reload --port 8000
 ```
 
-If everything works, you should see:
-```
-INFO:     Uvicorn running on http://127.0.0.1:8000
-INFO:     Application startup complete.
-```
+You should see `Application startup complete.` — the database tables are created automatically on first run.
 
-**Verify:** Open http://localhost:8000/docs to see the Swagger API documentation.
+Check the API docs at http://localhost:8000/docs
 
-> **Note:** The database tables are created automatically when the server starts — no need to run Alembic migrations manually for local development.
+### 4. Start the frontend
 
----
-
-### STEP 5 — Set Up the Frontend (Next.js)
-
-Open a **new terminal** (keep the backend running in the first one):
+Open a second terminal:
 
 ```bash
-# Go to the frontend directory
 cd frontend
-
-# Install Node.js dependencies
 npm install
-
-# Start the development server
 npm run dev
 ```
 
-If everything works, you should see:
-```
-▲ Next.js 16.x.x
-- Local:   http://localhost:3000
-```
+Open http://localhost:3000 — you'll land on the login page.
 
-**Verify:** Open http://localhost:3000 — you should see the login page.
+### 5. Sign up and start adding data
+
+Create an account, then add your income sources, expenses, and investments. The more data you add, the more useful the AI advisor becomes.
 
 ---
 
-### STEP 6 — Use the App
-
-1. **Sign Up** — Create an account at http://localhost:3000/auth
-2. **Add Data** — Start adding your income, expenses, investments, and loans
-3. **Dashboard** — View your portfolio summary, charts, and financial health metrics
-4. **Simulate** — Run SIP, compound growth, and loan payoff projections
-5. **AI Advisor** — Ask the Virtual CFO questions about your finances at /ai-chat
-
----
-
-## Running (Day-to-Day)
-
-Every time you want to work on or use the app:
-
-```bash
-# Terminal 1 — Backend
-cd designathon
-venv\Scripts\activate
-uvicorn app.main:app --reload --port 8000
-
-# Terminal 2 — Frontend
-cd designathon\frontend
-npm run dev
-```
-
-Then open http://localhost:3000 in your browser.
-
----
-
-## Project Structure
+## Project structure
 
 ```
-designathon/
-├── .env                             # Environment config (DB, keys)
-├── requirements.txt                 # Python dependencies
-├── README.md                        # This file
-│
-├── app/                             # Backend (FastAPI)
-│   ├── main.py                      # App entry point, CORS, routers
-│   ├── config.py                    # Settings from .env
-│   ├── database.py                  # DB engine & session
-│   │
-│   ├── models/                      # SQLAlchemy ORM models
-│   │   ├── user.py, income.py, expense.py, investment.py, loan.py
-│   │
-│   ├── schemas/                     # Pydantic request/response schemas
-│   │   ├── user.py, income.py, expense.py, investment.py, loan.py
-│   │   ├── portfolio.py, metrics.py, simulation.py
-│   │
-│   ├── routers/                     # API route handlers
-│   │   ├── auth.py                  # /auth — signup, login
-│   │   ├── income.py                # /income — CRUD
-│   │   ├── expense.py               # /expense — CRUD
-│   │   ├── investment.py            # /investment — CRUD
-│   │   ├── loan.py                  # /loan — CRUD
-│   │   ├── portfolio.py             # /portfolio — tracking
-│   │   ├── metrics.py               # /metrics — financial health
-│   │   ├── simulation.py            # /simulation — projections
-│   │   └── ai_chat.py               # /ai/chat — Virtual CFO
-│   │
-│   ├── services/                    # Business logic
-│   │   ├── auth_service.py          # Password hashing, JWT
-│   │   ├── market_data.py           # Yahoo Finance API
-│   │   ├── portfolio_engine.py      # Portfolio calculations
-│   │   ├── metrics_engine.py        # Financial metrics
-│   │   ├── simulation_engine.py     # Growth & loan projections
-│   │   ├── context_builder.py       # AI data gatherer
-│   │   └── ai_advisor.py            # LLM integration (Gemini/OpenAI)
-│   │
+DhanSathi/
+├── app/                        # FastAPI backend
+│   ├── main.py                 # Entry point, CORS, router registration
+│   ├── config.py               # Settings loaded from .env
+│   ├── database.py             # SQLAlchemy engine and session
+│   ├── models/                 # ORM models
+│   │   ├── user.py
+│   │   ├── income.py
+│   │   ├── expense.py
+│   │   ├── investment.py
+│   │   ├── loan.py
+│   │   ├── chat_session.py     # Persistent AI chat history
+│   │   ├── budget.py
+│   │   ├── emergency_fund.py
+│   │   ├── goal.py
+│   │   ├── insurance.py
+│   │   ├── retirement.py
+│   │   └── tax.py
+│   ├── routers/                # API endpoints
+│   ├── schemas/                # Pydantic request/response models
+│   ├── services/
+│   │   ├── ai_advisor.py       # GAN dual-LLM system
+│   │   ├── portfolio_engine.py # Live portfolio calculations
+│   │   ├── metrics_engine.py   # Financial health metrics
+│   │   ├── simulation_engine.py
+│   │   └── market_data.py      # Yahoo Finance integration
 │   └── utils/
-│       └── dependencies.py          # Auth middleware
+│       └── dependencies.py     # JWT auth middleware
 │
-├── alembic/                         # DB migrations (optional)
+├── frontend/
+│   └── src/
+│       ├── app/                # Next.js pages
+│       │   ├── dashboard/
+│       │   ├── income/
+│       │   ├── expenses/
+│       │   ├── budget/
+│       │   ├── portfolio/
+│       │   ├── loans/
+│       │   ├── goals/
+│       │   ├── emergency-fund/
+│       │   ├── insurance/
+│       │   ├── retirement/
+│       │   ├── tax/
+│       │   ├── simulation/
+│       │   └── ai-chat/        # GPT-style chat with session history
+│       ├── components/
+│       │   ├── AppShell.tsx    # Layout wrapper with auth guard
+│       │   ├── Sidebar.tsx     # Navigation
+│       │   ├── StatCard.tsx
+│       │   └── Modal.tsx
+│       └── lib/
+│           ├── api.ts          # Typed API client
+│           ├── auth-context.tsx
+│           └── helpers.ts
 │
-└── frontend/                        # Frontend (Next.js)
-    ├── .env.local                   # Frontend env (API URL)
-    ├── package.json                 # Node.js dependencies
-    │
-    └── src/
-        ├── app/                     # Pages (App Router)
-        │   ├── auth/page.tsx        # Login / Signup
-        │   ├── dashboard/page.tsx   # Main dashboard
-        │   ├── portfolio/page.tsx   # Investment management
-        │   ├── loans/page.tsx       # Loan & EMI tracking
-        │   ├── simulation/page.tsx  # Financial calculators
-        │   └── ai-chat/page.tsx     # Virtual CFO chat
-        │
-        ├── components/              # Reusable UI
-        │   ├── AppShell.tsx, Sidebar.tsx, Modal.tsx, StatCard.tsx
-        │
-        └── lib/                     # Core logic
-            ├── api.ts               # Backend API client
-            ├── auth-context.tsx     # Auth state management
-            └── helpers.ts           # Formatting utilities
+├── requirements.txt
+├── .env.example
+└── alembic/                    # DB migrations (optional for local dev)
 ```
 
 ---
 
-## API Endpoints
+## How the AI advisor works
 
-### Auth (`/auth`)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/signup` | Register new user |
-| POST | `/auth/login` | Login → JWT token |
-| GET | `/auth/me` | Get current user profile |
+When you send a message, DhanSathi doesn't just forward it to an LLM. It first builds a complete snapshot of your finances — income, expenses, savings rate, portfolio value, loans, risk profile, diversification score — and sends that along with your question.
 
-### Financial Data (`/income`, `/expense`, `/investment`, `/loan`)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/income/` | Add income source |
-| GET | `/income/` | List all income |
-| POST | `/expense/` | Add expense |
-| GET | `/expense/` | List expenses |
-| POST | `/investment/` | Add investment |
-| GET | `/investment/` | List investments |
-| PUT | `/investment/{id}` | Update investment |
-| POST | `/loan/` | Add loan |
-| GET | `/loan/` | List loans |
+The response goes through a two-model loop:
 
-### Analytics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/portfolio/summary` | Total value + P&L |
-| GET | `/portfolio/allocation` | Asset allocation breakdown |
-| GET | `/metrics/full-report` | Complete financial health |
-| POST | `/simulation/compound-growth` | Compound interest calculator |
-| POST | `/simulation/monthly-investment` | SIP projection |
-| POST | `/simulation/loan-payoff` | Loan amortization |
+1. **Generator** produces personalised advice grounded in your actual numbers
+2. **Discriminator** scores it 0–100 for factual accuracy, hallucinations, and financial soundness
+3. If the score is below 80, the generator retries with the discriminator's feedback (up to 3 times, with temperature dropping each round)
+4. If it still doesn't pass, the discriminator directly refines the best attempt
+5. The final response is cleaned and formatted before it reaches you
 
-### AI Advisor (`/ai`)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/ai/chat` | Chat with Virtual CFO |
+Every response includes a confidence score and verification note so you know how many attempts it took.
+
+Chat history is saved per session in the database. Sessions are named from the first prompt you send, and the full history loads back when you return — works the same way as ChatGPT.
 
 ---
 
-## Troubleshooting
+## API overview
 
-| Problem | Solution |
-|---------|----------|
-| `psycopg2` install fails | Install PostgreSQL dev headers: `pip install psycopg2-binary` |
-| Port 8000 in use | Use `uvicorn app.main:app --port 8001` and update `.env.local` |
-| Port 3000 in use | Use `npx next dev -p 3001` |
-| DB connection refused | Check PostgreSQL is running and `.env` has correct credentials |
-| AI advisor says "key not configured" | Add your Gemini/OpenAI API key to `.env` |
-| Frontend shows "API error" | Make sure backend is running on port 8000 |
+| Area | Prefix | What it covers |
+|------|--------|----------------|
+| Auth | `/auth` | Signup, login, profile |
+| Income | `/income` | CRUD for income sources |
+| Expenses | `/expense` | CRUD + monthly summary |
+| Budget | `/budget` | Monthly budget tracking |
+| Investments | `/investment` | CRUD + ticker search |
+| Loans | `/loan` | CRUD for loans and EMIs |
+| Portfolio | `/portfolio` | Live summary and allocation |
+| Metrics | `/metrics` | Savings rate, DTI, risk, diversification |
+| Simulation | `/simulation` | Compound growth, SIP, loan payoff |
+| Emergency Fund | `/emergency-fund` | Fund tracking and progress |
+| Insurance | `/insurance` | Policy management |
+| Goals | `/goals` | Financial goal tracking |
+| Retirement | `/retirement` | Retirement planning |
+| Tax | `/tax` | Tax records and deductions |
+| AI Chat | `/ai` | Session management and chat |
+
+---
+
+## Common issues
+
+**DB connection fails** — check PostgreSQL is running and your `DATABASE_URL` password is correct
+
+**AI advisor says key not configured** — add `OPENAI_API_KEY` to `.env` and restart the backend
+
+**Port 8000 in use** — run `uvicorn app.main:app --port 8001` and update `NEXT_PUBLIC_API_URL` in the frontend
+
+**Port 3000 in use** — run `npx next dev -p 3001`
+
+**psycopg2 install fails** — use `pip install psycopg2-binary` instead
 
 ---
 
 ## License
+
 MIT
