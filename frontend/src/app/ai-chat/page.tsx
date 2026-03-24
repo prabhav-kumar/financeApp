@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Sparkles, Loader2, RefreshCw, Zap, Info } from "lucide-react";
+import { Send, Bot, User, Sparkles, Loader2, RefreshCw, Zap, Info, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { ai as aiApi, type AiChatMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -71,10 +71,98 @@ export default function AiChatPage() {
   }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Initialize speech synthesis
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      synthRef.current = window.speechSynthesis;
+    }
+  }, []);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
+
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInput(transcript);
+          setIsListening(false);
+        };
+
+        recognition.onerror = () => {
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const speakText = (text: string) => {
+    if (!synthRef.current) return;
+
+    // Stop any ongoing speech
+    synthRef.current.cancel();
+
+    // Clean text for speech (remove markdown, emojis, etc.)
+    const cleanText = text
+      .replace(/[#*_~`]/g, "")
+      .replace(/\[.*?\]\(.*?\)/g, "")
+      .replace(/[👋⚠️💡📊💰🎯]/g, "")
+      .replace(/\n+/g, ". ");
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    synthRef.current.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (synthRef.current) {
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+    }
+  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -92,11 +180,17 @@ export default function AiChatPage() {
       history.push({ role: "user", content: text });
 
       const result = await aiApi.chat(text, history.slice(0, -1));
-      setMessages((prev) => [...prev, {
+      const assistantMsg: Message = {
         id: (Date.now() + 1).toString(), role: "assistant",
         content: result.response, timestamp: new Date(),
         provider: result.provider, model: result.model,
-      }]);
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      // Auto-speak the response if voice is enabled
+      if (voiceEnabled) {
+        speakText(result.response);
+      }
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "Unknown error";
       setMessages((prev) => [...prev, {
@@ -133,6 +227,14 @@ export default function AiChatPage() {
         <button className="btn btn-secondary" style={{ fontSize: 12, padding: "7px 14px" }}
           onClick={() => setMessages([messages[0]])}>
           <RefreshCw size={13} /> New Chat
+        </button>
+        <button
+          className="btn btn-secondary"
+          style={{ fontSize: 12, padding: "7px 14px" }}
+          onClick={() => setVoiceEnabled(!voiceEnabled)}
+          title={voiceEnabled ? "Disable voice output" : "Enable voice output"}
+        >
+          {voiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
         </button>
       </div>
 
@@ -173,6 +275,26 @@ export default function AiChatPage() {
                       {msg.provider}{msg.model ? ` · ${msg.model}` : ""}
                     </span>
                   </div>
+                )}
+                {msg.role === "assistant" && msg.id !== "welcome" && (
+                  <button
+                    onClick={() => isSpeaking ? stopSpeaking() : speakText(msg.content)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      opacity: 0.6,
+                      transition: "opacity 200ms",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
+                    title={isSpeaking ? "Stop speaking" : "Read aloud"}
+                  >
+                    {isSpeaking ? <VolumeX size={11} style={{ color: "var(--text-muted)" }} /> : <Volume2 size={11} style={{ color: "var(--text-muted)" }} />}
+                  </button>
                 )}
               </div>
             </div>
@@ -238,6 +360,28 @@ export default function AiChatPage() {
         display: "flex", alignItems: "center", gap: 10,
         padding: "10px 14px", flexShrink: 0,
       }}>
+        <button
+          onClick={toggleVoiceInput}
+          disabled={loading}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: "var(--r-sm)",
+            border: isListening ? "none" : "1px solid var(--border)",
+            background: isListening ? "var(--grad-primary)" : "transparent",
+            cursor: loading ? "default" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: loading ? 0.35 : 1,
+            transition: "all 200ms var(--ease)",
+            flexShrink: 0,
+            animation: isListening ? "pulse 1.5s ease-in-out infinite" : "none",
+          }}
+          title={isListening ? "Stop listening" : "Start voice input"}
+        >
+          {isListening ? <MicOff size={15} color="white" /> : <Mic size={15} color="#64748b" />}
+        </button>
         <input ref={inputRef} type="text" value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
@@ -261,7 +405,13 @@ export default function AiChatPage() {
         </button>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+      `}</style>
     </div>
   );
 }

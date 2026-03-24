@@ -7,14 +7,21 @@ import { useAuth } from "@/lib/auth-context";
 import {
   LayoutDashboard, DollarSign, Receipt, PieChart,
   Landmark, TrendingUp, MessageSquare, LogOut, Wallet,
+  Shield, Target, Umbrella, PiggyBank, FileText, BarChart2,
 } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/income", label: "Income", icon: DollarSign },
   { href: "/expenses", label: "Expenses", icon: Receipt },
+  { href: "/budget", label: "Budget", icon: BarChart2 },
   { href: "/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/loans", label: "Loans", icon: Landmark },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/emergency-fund", label: "Emergency Fund", icon: Shield },
+  { href: "/insurance", label: "Insurance", icon: Umbrella },
+  { href: "/retirement", label: "Retirement", icon: PiggyBank },
+  { href: "/tax", label: "Tax Planning", icon: FileText },
   { href: "/simulation", label: "Simulate", icon: TrendingUp },
   { href: "/ai-chat", label: "AI Advisor", icon: MessageSquare },
 ];
