@@ -217,11 +217,62 @@ export const simulation = {
 /* ── AI Chat ───────────────────────────────────────────── */
 export interface AiChatMessage { role: "user" | "assistant"; content: string; }
 
+export interface AiInsight {
+  problem: string; impact: string; action: string; severity: "red" | "yellow" | "green";
+}
+export interface AiMetric {
+  label: string; value: string; status: "good" | "warn" | "bad";
+}
+export interface AiScenario {
+  title: string; final_wealth: string; risk: string; time_horizon: string; recommended: boolean;
+}
+export interface AiStructuredResponse {
+  recommendation: { title: string; action: string; amount: string | null };
+  insights: AiInsight[];
+  metrics: AiMetric[];
+  scenarios: AiScenario[];
+  explanation: string[];
+  privacy_safe: boolean;
+}
+
 export interface AiChatResponse {
-  response: string; provider: string; model: string | null; context_summary: string;
+  response: string;
+  provider: string;
+  model: string | null;
+  context_summary: string;
+  verified: boolean;
+  confidence_score: number;
+  attempts: number;
+  verification_note: string;
+}
+
+export interface SessionMessage {
+  id: number; role: string; content: string; created_at: string;
+}
+export interface SessionOut {
+  id: number; title: string; created_at: string; updated_at: string; message_count: number;
+}
+export interface SessionDetail {
+  id: number; title: string; created_at: string; updated_at: string; messages: SessionMessage[];
+}
+export interface SessionChatResponse {
+  message: SessionMessage;
+  session_title: string;
+  verified: boolean;
+  confidence_score: number;
+  attempts: number;
+  verification_note: string;
 }
 
 export const ai = {
-  chat: (message: string, history: AiChatMessage[] = []) =>
-    request<AiChatResponse>("/ai/chat", { method: "POST", body: JSON.stringify({ message, history }) }),
+  // Session management
+  listSessions: () => request<SessionOut[]>("/ai/sessions"),
+  createSession: () => request<SessionDetail>("/ai/sessions", { method: "POST" }),
+  getSession: (id: number) => request<SessionDetail>(`/ai/sessions/${id}`),
+  deleteSession: (id: number) => request<void>(`/ai/sessions/${id}`, { method: "DELETE" }),
+  renameSession: (id: number, title: string) =>
+    request<SessionOut>(`/ai/sessions/${id}/title`, { method: "PATCH", body: JSON.stringify({ title }) }),
+  // Chat within a session
+  chat: (sessionId: number, message: string) =>
+    request<SessionChatResponse>(`/ai/sessions/${sessionId}/chat`, { method: "POST", body: JSON.stringify({ message }) }),
 };
