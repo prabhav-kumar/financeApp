@@ -30,10 +30,12 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     is_active: bool
+    oauth_provider: Optional[str] = None
+    avatar_url: Optional[str] = None
     created_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True  # allows ORM → Pydantic conversion
+        from_attributes = True
 
 
 class TokenResponse(BaseModel):

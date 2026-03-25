@@ -30,9 +30,14 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
     # ── AI / LLM (Virtual CFO) ───────────────────────────
-    AI_PROVIDER: str = "openai"          # Always use "openai" (works with OpenRouter too)
-    OPENAI_API_KEY: str = ""             # OpenRouter or OpenAI API key
-    OPENAI_MODEL: str = "openai/gpt-4o-mini"  # For OpenRouter: "openai/gpt-4o-mini" or "anthropic/claude-3.5-sonnet"
+    AI_PROVIDER: str = "openai"
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "openai/gpt-4o-mini"
+
+    # ── Google OAuth ─────────────────────────────────────
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:3000/auth/callback"
 
     class Config:
         env_file = ".env"

@@ -18,8 +18,11 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(255), nullable=False)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)  # nullable for OAuth users
     is_active = Column(Boolean, default=True)
+    oauth_provider = Column(String(50), nullable=True)   # "google" or None
+    oauth_id = Column(String(255), nullable=True, index=True)  # Google sub ID
+    avatar_url = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

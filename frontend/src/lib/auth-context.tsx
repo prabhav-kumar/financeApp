@@ -11,11 +11,12 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, full_name: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null, loading: true,
-  login: async () => {}, signup: async () => {}, logout: () => {},
+  login: async () => {}, signup: async () => {}, logout: () => {}, refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -48,8 +49,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => { clearToken(); setUser(null); }, []);
 
+  // Called after OAuth token is stored — loads user into context before navigation
+  const refreshUser = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const u = await authApi.me();
+      setUser({ id: u.id, email: u.email, full_name: u.full_name });
+    } catch {
+      clearToken();
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
