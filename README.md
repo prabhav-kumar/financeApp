@@ -1,4 +1,4 @@
-# DhanSathi — Your AI-Powered Personal Finance Companion
+# 🏹 DhanSathi — Your AI-Powered Personal Finance Companion
 
 DhanSathi is a full-stack personal finance platform built for Indian users. It's part portfolio tracker, part financial health monitor, part Virtual CFO — all in one place. You add your income, expenses, investments, and loans, and DhanSathi gives you a clear picture of where you stand and what to do next.
 
