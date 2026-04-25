@@ -1,4 +1,4 @@
-# DhanSathi — Your Personal Finance Command Centre
+# DhanSathi - Your Personal Finance Command Centre
 
 Managing personal finances in India usually means juggling multiple apps — one for investments, one for loans, a spreadsheet for budget, another tool for tax. And when you want AI-powered advice, you end up pasting your entire financial situation into ChatGPT every single time, only for it to forget everything once the context fills up.
 
