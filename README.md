@@ -216,9 +216,3 @@ DhanSathi/
 | Retirement | `/retirement` | Retirement planning |
 | Tax | `/tax` | Tax records and deductions |
 | AI Chat | `/ai` | Session management and chat |
-
----
-
-## License
-
-MIT
